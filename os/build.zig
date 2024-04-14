@@ -8,12 +8,13 @@ pub fn build(b: *std.Build) void {
         .cpu_model = .{ .explicit = &std.Target.riscv.cpu.generic_rv64 },
         .cpu_features_add = std.Target.riscv.featureSet(&.{ .m, .a, .c, .zicsr }),
     };
+    const optimize = b.standardOptimizeOption(.{});
 
     const os = b.addExecutable(.{
         .name = "os.elf",
         .root_source_file = .{ .path = "src/entry.zig" },
         .target = b.resolveTargetQuery(target),
-        .optimize = .ReleaseSafe,
+        .optimize = optimize,
     });
     os.root_module.code_model = .medium;
 

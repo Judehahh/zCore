@@ -15,7 +15,7 @@ export fn _start() linksection(".text.entry") callconv(.Naked) noreturn {
 
 export fn callKmain() noreturn {
     clearBss();
-    kmain() catch @panic("Something wrong");
+    kmain();
     while (true) {}
 }
 
