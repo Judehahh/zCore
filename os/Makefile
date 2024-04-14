@@ -1,5 +1,6 @@
 # Building
 MODE := ReleaseSafe
+LOG := Trace
 KERNEL_ELF := zig-out/bin/os.elf
 KERNEL_BIN := zig-out/bin/os.bin
 DISASM_TMP := zig-out/bin/os.asm
@@ -22,7 +23,7 @@ DISASM ?= -x -S
 kernel:
 	@echo Platform: $(BOARD)
 	@cp src/linker-$(BOARD).ld src/linker.ld
-	@zig build -Doptimize=${MODE}
+	@zig build -Doptimize=${MODE} -Dlog=${LOG}
 	@rm src/linker.ld
 
 clean:

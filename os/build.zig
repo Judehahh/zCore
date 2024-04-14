@@ -1,4 +1,5 @@
 const std = @import("std");
+const logLevel = @import("src/log.zig").Level;
 
 pub fn build(b: *std.Build) void {
     const target = std.zig.CrossTarget{
@@ -17,6 +18,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     os.root_module.code_model = .medium;
+
+    const log_level = b.option(logLevel, "log", "Log Level") orelse .None;
+    const options = b.addOptions();
+    options.addOption(logLevel, "Log", log_level);
+    os.root_module.addOptions("config", options);
 
     os.setLinkerScript(.{ .path = "src/linker.ld" });
 
