@@ -1,16 +1,16 @@
 const std = @import("std");
-const sbi = @import("sbi.zig");
+const lib = @import("lib.zig");
 
 const Self = @This();
 const Error = error{};
-const Writer = std.io.Writer(*Self, Error, write);
+const Writer = std.io.Writer(*Self, Error, writeStr);
 var console = Self{};
 
-fn write(self: *Self, bytes: []const u8) Error!usize {
+const StdOut: usize = 1;
+
+fn writeStr(self: *Self, bytes: []const u8) Error!usize {
     _ = self;
-    for (bytes) |b| {
-        sbi.console_putchar(b);
-    }
+    _ = lib.write(StdOut, bytes);
     return bytes.len;
 }
 

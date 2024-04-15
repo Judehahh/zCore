@@ -10,7 +10,7 @@ const eid = enum(usize) {
     shutdown = 8,
 };
 
-inline fn call(which: eid, arg0: usize, arg1: usize, arg2: usize) usize {
+fn call(which: eid, arg0: usize, arg1: usize, arg2: usize) usize {
     return asm volatile ("ecall"
         : [ret] "={x10}" (-> usize),
         : [which] "{x17}" (@intFromEnum(which)),
