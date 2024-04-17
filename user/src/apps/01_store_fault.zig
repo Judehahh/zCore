@@ -1,3 +1,3 @@
-export fn main() i32 {
-    return 0;
+pub fn main() !void {
+    return error.Exit;
 }

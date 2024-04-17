@@ -10,14 +10,6 @@ pub fn build(b: *std.Build) !void {
     });
     const optimize = b.standardOptimizeOption(.{});
 
-    const lib = b.addStaticLibrary(.{
-        .name = "lib",
-        .root_source_file = .{ .path = "src/lib.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
-    lib.root_module.code_model = .medium;
-
     const lib_module = b.addModule("lib", .{
         .root_source_file = .{ .path = "src/lib.zig" },
         .target = target,
@@ -36,21 +28,28 @@ pub fn build(b: *std.Build) !void {
         }
 
         const app_name = entry.basename[0 .. entry.basename.len - 4];
-        const app_path = try std.fmt.allocPrint(b.allocator, "src/apps/{s}", .{entry.basename});
+        const app_path = try apps_dir.realpathAlloc(b.allocator, entry.basename);
 
         std.debug.print("building app: {s}\n", .{app_name});
 
-        const exe = b.addExecutable(.{
-            .name = app_name,
+        const app_module = b.addModule("app", .{
             .root_source_file = .{ .path = app_path },
             .target = target,
             .optimize = optimize,
         });
+        app_module.addImport("lib", lib_module);
 
+        const exe = b.addExecutable(.{
+            .name = app_name,
+            .root_source_file = .{ .path = "src/start.zig" },
+            .target = target,
+            .optimize = optimize,
+        });
         exe.root_module.code_model = .medium;
+
+        exe.root_module.addImport("app", app_module);
         exe.root_module.addImport("lib", lib_module);
 
-        exe.linkLibrary(lib);
         exe.setLinkerScript(.{ .path = "src/linker.ld" });
 
         b.installArtifact(exe);

@@ -1,7 +1,5 @@
 const lib = @import("lib");
 
-export fn main() i32 {
-    lib.console.print("Hello from {s}!\n", .{"user"});
-
-    return 0;
+pub fn main() !void {
+    lib.print("Hello from {s}!\n", .{"user"});
 }
