@@ -22,7 +22,7 @@ export fn callKmain() noreturn {
 fn clearBss() void {
     const sbss = @extern([*]u8, .{ .name = "sbss" });
     const ebss = @extern([*]u8, .{ .name = "ebss" });
-    const bss_len = @intFromPtr(sbss) - @intFromPtr(ebss);
+    const bss_len = @intFromPtr(ebss) - @intFromPtr(sbss);
 
     @memset(sbss[0..bss_len], 0);
 }

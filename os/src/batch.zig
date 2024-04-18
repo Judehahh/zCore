@@ -1,6 +1,7 @@
 const std = @import("std");
 const console = @import("console.zig");
 const sbi = @import("sbi.zig");
+const TrapContext = @import("trap.zig").TrapContext;
 
 const user_stack_size: usize = 4096 * 2;
 const kernel_stack_size: usize = 4096 * 2;
@@ -12,19 +13,34 @@ const kernel_stack: struct {
     data: [kernel_stack_size]u8 align(4096),
     const Self = @This();
 
-    pub fn get_sp(self: *Self) usize {
-        return @intFromPtr(self.data.ptr) + kernel_stack_size;
+    pub fn getSp(self: Self) usize {
+        return @intFromPtr(&self.data[0]) + kernel_stack_size;
     }
-} align(4096) = .{ .data = std.mem.zeroes([kernel_stack_size]u8) };
+
+    pub fn pushContext(self: Self, cx: TrapContext) *TrapContext {
+        const cx_ptr: *TrapContext = @ptrFromInt(self.getSp() - @sizeOf(TrapContext));
+        cx_ptr.* = cx;
+        return cx_ptr;
+    }
+} align(4096) = .{ .data = [_]u8{0} ** kernel_stack_size };
 
 var user_stack: struct {
-    data: []align(4096) u8,
+    data: [user_stack_size]u8 align(4096),
     const Self = @This();
 
-    pub fn get_sp(self: *Self) usize {
-        return @intFromPtr(self.data.ptr) + user_stack_size;
+    pub fn getSp(self: *Self) usize {
+        return @intFromPtr(&self.data[0]) + user_stack_size;
     }
-} align(4096) = .{ .data = std.mem.zeroes([user_stack_size]u8) };
+} align(4096) = .{ .data = [_]u8{0} ** user_stack_size };
+
+pub var app_manager: AppManager = undefined;
+
+pub fn init() void {
+    app_manager = AppManager.init();
+    app_manager.printAppInfo();
+}
+
+extern fn __restore(usize) callconv(.C) noreturn;
 
 pub const AppManager = struct {
     num_app: usize,
@@ -38,12 +54,11 @@ pub const AppManager = struct {
         var app_start = std.mem.zeroes([max_app_num + 1]usize);
         const app_start_raw = num_app_ptr[1 .. num_app + 2];
         std.mem.copyForwards(usize, &app_start, app_start_raw);
-        const am = AppManager{
+        return .{
             .num_app = num_app,
             .current_app = 0,
             .app_start = app_start,
         };
-        return am;
     }
 
     pub fn printAppInfo(self: *Self) void {
@@ -58,6 +73,10 @@ pub const AppManager = struct {
         const current_app = self.get_current_app();
         self.loadApp(current_app);
         self.move_to_next_app();
+        __restore(@intFromPtr(kernel_stack.pushContext(TrapContext.init(
+            app_base_address,
+            user_stack.getSp(),
+        ))));
     }
 
     fn loadApp(self: *Self, app_id: usize) void {
@@ -73,7 +92,7 @@ pub const AppManager = struct {
         // Copy app from source.
         const app_src: [*]u8 = @ptrFromInt(self.app_start[app_id]);
         const app_size: usize = self.app_start[app_id + 1] - self.app_start[app_id];
-        std.mem.copyForwards(u8, app_src[0..app_size], app_src[0..app_size]);
+        std.mem.copyForwards(u8, app_area[0..app_size], app_src[0..app_size]);
 
         asm volatile ("fence.i");
     }

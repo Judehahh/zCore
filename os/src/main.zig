@@ -2,6 +2,7 @@ const sbi = @import("sbi.zig");
 const console = @import("console.zig");
 const log = @import("log.zig");
 const batch = @import("batch.zig");
+const trap = @import("trap.zig");
 
 pub fn kmain() void {
     console.print("\n[kernel] Hello {s}⚡\n", .{"zCore"});
@@ -23,11 +24,12 @@ pub fn kmain() void {
         log.warn("[kernel] .stack  [0x{x:0>8}, 0x{x:0>8})\n", .{ boot_stack, sbss });
         log.err("[kernel] .bss    [0x{x:0>8}, 0x{x:0>8})\n", .{ sbss, ebss });
     }
-    var app_manager = batch.AppManager.init();
-    app_manager.printAppInfo();
-    app_manager.runNextApp();
+
+    trap.init();
+    batch.init();
+    batch.app_manager.runNextApp();
+
     log.panic(@src(), "Shutdown machine!", .{});
-    sbi.shutdown();
 }
 
 const link_app = @import("link_app.zig");

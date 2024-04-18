@@ -27,7 +27,7 @@ kernel:
 	@rm src/linker.ld
 
 clean:
-	@rm -rf zig-cache zig-out src/linker.ld
+	@rm -rf zig-cache zig-out src/linker.ld src/link_app.zig
 
 disasm: kernel
 	@$(OBJDUMP) $(DISASM) $(KERNEL_ELF) | less

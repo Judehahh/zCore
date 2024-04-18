@@ -46,7 +46,7 @@ inline fn callMain() u8 {
 fn clearBss() void {
     const start_bss = @extern([*]u8, .{ .name = "start_bss" });
     const end_bss = @extern([*]u8, .{ .name = "end_bss" });
-    const bss_len = @intFromPtr(start_bss) - @intFromPtr(end_bss);
+    const bss_len = @intFromPtr(end_bss) - @intFromPtr(start_bss);
 
     @memset(start_bss[0..bss_len], 0);
 }
