@@ -21,6 +21,7 @@ GDB := $(CROSS_COMPILE)gdb
 DISASM ?= -x -S
 
 kernel:
+	@cd ../user && zig build -Doptimize=${MODE}
 	@echo Platform: $(BOARD)
 	@cp src/linker-$(BOARD).ld src/linker.ld
 	@zig build -Doptimize=${MODE} -Dlog=${LOG}

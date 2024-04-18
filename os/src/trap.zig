@@ -1,6 +1,8 @@
 const std = @import("std");
 const riscv = @import("riscv.zig");
 const log = @import("log.zig");
+const console = @import("console.zig");
+const batch = @import("batch.zig");
 const syscall = @import("syscall.zig").syscall;
 
 pub const Trap = union(enum) {
@@ -92,6 +94,14 @@ pub export fn trap_handler(cx: *TrapContext) *TrapContext {
             .UserEnvCall => {
                 cx.sepc += 4;
                 cx.x[10] = syscall(@enumFromInt(cx.x[17]), cx.x[10], cx.x[11], cx.x[12]);
+            },
+            .StoreFault, .StorePageFault => {
+                console.print("[kernel] PageFault in application, kernel killed it.\n", .{});
+                batch.app_manager.runNextApp();
+            },
+            .IllegalInstruction => {
+                console.print("[kernel] IllegalInstruction in application, kernel killed it.\n", .{});
+                batch.app_manager.runNextApp();
             },
             else => {
                 log.panic(
