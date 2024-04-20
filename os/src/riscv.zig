@@ -22,7 +22,7 @@ pub const CSRs = enum {
     }
 };
 
-pub const Sstatus = struct {
+pub const Sstatus = packed struct {
     bits: Bits,
 
     const tag: CSRs = .sstatus;

@@ -118,11 +118,11 @@ pub export fn trap_handler(cx: *TrapContext) *TrapContext {
 
 comptime {
     if (@sizeOf(TrapContext) != 34 * 8) {
-        @compileError("Failed");
+        @compileError("TrapContext size error");
     }
 }
 
-pub const TrapContext = struct {
+pub const TrapContext = extern struct {
     x: [32]usize,
     sstatus: riscv.Sstatus,
     sepc: usize,
