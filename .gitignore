@@ -1,4 +1,8 @@
 zig-cache/
 zig-out/
 
+.vscode/
+.vscode-ctags
+
 link_app.zig
+*.tmp

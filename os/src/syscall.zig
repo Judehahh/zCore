@@ -1,6 +1,6 @@
 const console = @import("console.zig");
 const log = @import("log.zig");
-const batch = @import("batch.zig");
+const task = @import("task.zig");
 
 const SysCall = enum(usize) {
     write = 64,
@@ -31,5 +31,6 @@ fn sysWrite(fd: usize, buf: [*]const u8, len: usize) usize {
 
 fn sysExit(exit_code: i32) void {
     console.print("[kernel] Application exited with code {d}\n", .{exit_code});
-    batch.app_manager.runNextApp();
+    task.exitCurrentAndRunNext();
+    log.panic(@src(), "Unreachable in sysExit\n", .{});
 }

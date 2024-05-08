@@ -22,16 +22,52 @@ pub fn build(b: *std.Build) !void {
     var walker = try apps_dir.walk(b.allocator);
     defer walker.deinit();
 
+    var apps_basename_array = std.ArrayList([]const u8).init(b.allocator);
+    defer apps_basename_array.deinit();
+
     while (try walker.next()) |entry| {
         if (!std.mem.endsWith(u8, entry.basename, ".zig")) {
             continue;
         }
+        const basename = try std.fmt.allocPrint(b.allocator, "{s}", .{entry.basename});
+        try apps_basename_array.append(basename);
+    }
 
-        const app_name = entry.basename[0 .. entry.basename.len - 4];
-        const app_path = try apps_dir.realpathAlloc(b.allocator, entry.basename);
+    const apps_basename = try apps_basename_array.toOwnedSlice();
+    std.mem.sort([]const u8, apps_basename, {}, struct {
+        pub fn lessThan(_: void, x: []const u8, y: []const u8) bool {
+            return std.mem.lessThan(u8, x, y);
+        }
+    }.lessThan);
 
-        std.debug.print("building app: {s}\n", .{app_name});
+    // For linker scripts.
+    var base_address: usize = 0x80400000;
+    const step = 0x20000;
+    var linker_origin_file = try std.fs.cwd().openFile("src/linker.ld", .{ .mode = .read_write });
+    defer linker_origin_file.close();
+    const linker_origin_src = try linker_origin_file.readToEndAlloc(b.allocator, std.math.maxInt(usize));
 
+    for (apps_basename) |app_basename| {
+        const app_name = app_basename[0 .. app_basename.len - 4];
+        const app_path = try apps_dir.realpathAlloc(b.allocator, app_basename);
+
+        // Prepare a linker script.
+        const linker_path = try std.fmt.allocPrint(b.allocator, "src/{s}.ld.tmp", .{app_name});
+
+        const needle = try std.fmt.allocPrint(b.allocator, "0x{x}", .{0x80400000});
+        const replacement = try std.fmt.allocPrint(b.allocator, "0x{x}", .{base_address});
+        const linker_src = try b.allocator.alloc(u8, linker_origin_src.len);
+        defer b.allocator.free(linker_src);
+        _ = std.mem.replace(u8, linker_origin_src, needle, replacement, linker_src);
+
+        const linker_file = try std.fs.cwd().createFile(linker_path, .{});
+        defer linker_file.close();
+        try linker_file.writeAll(linker_src);
+
+        std.debug.print("building app: {s}, start with address: 0x{x}\n", .{ app_name, base_address });
+        base_address += step;
+
+        // Start to build the app.
         const app_module = b.addModule("app", .{
             .root_source_file = .{ .path = app_path },
             .target = target,
@@ -50,10 +86,11 @@ pub fn build(b: *std.Build) !void {
         exe.root_module.addImport("app", app_module);
         exe.root_module.addImport("lib", lib_module);
 
-        exe.setLinkerScript(.{ .path = "src/linker.ld" });
+        exe.setLinkerScript(.{ .path = linker_path });
 
         b.installArtifact(exe);
 
+        // elf to bin
         const bin_name = try std.fmt.allocPrint(b.allocator, "{s}.bin", .{app_name});
 
         const bin = exe.addObjCopy(.{

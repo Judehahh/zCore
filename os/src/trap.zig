@@ -2,7 +2,7 @@ const std = @import("std");
 const riscv = @import("riscv.zig");
 const log = @import("log.zig");
 const console = @import("console.zig");
-const batch = @import("batch.zig");
+const task = @import("task.zig");
 const syscall = @import("syscall.zig").syscall;
 
 pub const Trap = union(enum) {
@@ -97,11 +97,13 @@ pub export fn trap_handler(cx: *TrapContext) *TrapContext {
             },
             .StoreFault, .StorePageFault => {
                 console.print("[kernel] PageFault in application, kernel killed it.\n", .{});
-                batch.app_manager.runNextApp();
+                task.exitCurrentAndRunNext();
+                log.panic(@src(), "Unreachable in trap_handler\n", .{});
             },
             .IllegalInstruction => {
-                console.print("[kernel] IllegalInstruction in application, kernel killed it.\n", .{});
-                batch.app_manager.runNextApp();
+                console.print("[kernel] IllegalInstruction in application at pc = 0x{x}, kernel killed it.\n", .{cx.sepc});
+                task.exitCurrentAndRunNext();
+                log.panic(@src(), "Unreachable in trap_handler\n", .{});
             },
             else => {
                 log.panic(
@@ -187,9 +189,6 @@ comptime {
         \\    call trap_handler
         \\
         \\__restore:
-        \\    # case1: start running app by __restore
-        \\    # case2: back to U after handling trap
-        \\    mv sp, a0
         \\    # now sp->kernel stack(after allocated), sscratch->user stack
         \\    # restore sstatus/sepc
         \\    ld t0, 32*8(sp)
