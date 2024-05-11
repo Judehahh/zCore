@@ -1,6 +1,7 @@
 const SysCall = enum(usize) {
     write = 64,
     exit = 93,
+    yield = 124,
 };
 
 fn call(id: SysCall, arg0: usize, arg1: usize, arg2: usize) usize {
@@ -21,4 +22,8 @@ pub fn sysWrite(fd: usize, buffer: []const u8) usize {
 pub fn sysExit(status: i32) noreturn {
     _ = call(.exit, @bitCast(@as(isize, status)), 0, 0);
     unreachable;
+}
+
+pub fn sysYield() usize {
+    return call(.yield, 0, 0, 0);
 }

@@ -42,7 +42,10 @@ pub const TaskManager = struct {
         task0.task_status = .Running;
         const next_task_cx_ptr: *TaskContext = &task0.task_cx;
         var _unused = TaskContext.zero_init();
-        __switch(&_unused, next_task_cx_ptr);
+        __switch(
+            &_unused,
+            next_task_cx_ptr,
+        );
         log.panic(@src(), "unreachable in runFirstTask", .{});
     }
 
@@ -73,12 +76,18 @@ pub const TaskManager = struct {
     /// or there is no `Ready` task and we can exit with all applications completed
     pub fn runNextTask(self: *Self) void {
         if (self.findNextTask()) |next| {
-            const current = self.current_task;
-            self.tasks[next].task_status = .Running;
+            var current_task = self.tasks[self.current_task];
+            var next_task = self.tasks[next];
+
+            next_task.task_status = .Running;
             self.current_task = next;
-            const current_task_cx_ptr: *TaskContext = &self.tasks[current].task_cx;
-            const next_task_cx_ptr: *TaskContext = &self.tasks[next].task_cx;
-            __switch(current_task_cx_ptr, next_task_cx_ptr);
+
+            const current_task_cx_ptr: *TaskContext = &current_task.task_cx;
+            const next_task_cx_ptr: *TaskContext = &next_task.task_cx;
+            __switch(
+                current_task_cx_ptr,
+                next_task_cx_ptr,
+            );
         } else {
             console.print("All applications completed!\n", .{});
             sbi.shutdown();
@@ -165,7 +174,7 @@ pub const TaskControlBlock = struct {
 pub extern fn __switch(current_task_cx_ptr: *TaskContext, next_task_cx_ptr: *TaskContext) callconv(.C) noreturn;
 comptime {
     asm (
-        \\    .altmacro
+        \\.altmacro
         \\.macro SAVE_SN n
         \\    sd s\n, (\n+2)*8(a0)
         \\.endm

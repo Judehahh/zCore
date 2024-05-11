@@ -11,3 +11,7 @@ pub fn exit(exit_code: i32) noreturn {
     syscall.sysExit(exit_code);
     unreachable;
 }
+
+pub fn yield_() usize {
+    return syscall.sysYield();
+}
