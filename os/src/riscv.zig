@@ -4,9 +4,11 @@ const trap = @import("trap.zig");
 
 pub const CSRs = enum {
     sstatus,
+    sie,
     stvec,
     scause,
     stval,
+    time,
 
     inline fn read(reg: CSRs) usize {
         return asm volatile ("csrr %[ret], " ++ @tagName(reg)
@@ -39,6 +41,23 @@ pub const Sstatus = packed struct {
 
     pub fn setSpp(self: *Self, val: SPP) void {
         self.bits.setValue(8, val == .Supervisor);
+    }
+};
+
+pub const Sie = struct {
+    bits: Bits,
+
+    const tag: CSRs = .sie;
+    const Self = @This();
+
+    pub fn read() Self {
+        return .{ .bits = .{ .mask = tag.read() } };
+    }
+
+    pub fn setTimer() void {
+        var time = read();
+        time.bits.set(5);
+        tag.write(time.bits.mask);
     }
 };
 
@@ -101,6 +120,17 @@ pub const Stval = struct {
     bits: Bits,
 
     const tag: CSRs = .stval;
+    const Self = @This();
+
+    pub fn read() Self {
+        return .{ .bits = .{ .mask = tag.read() } };
+    }
+};
+
+pub const Time = struct {
+    bits: Bits,
+
+    const tag: CSRs = .time;
     const Self = @This();
 
     pub fn read() Self {

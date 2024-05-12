@@ -1,11 +1,13 @@
 const console = @import("console.zig");
 const log = @import("log.zig");
 const task = @import("task.zig");
+const timer = @import("timer.zig");
 
 const SysCall = enum(usize) {
     write = 64,
     exit = 93,
     yield = 124,
+    gettime = 169,
     _,
 };
 
@@ -15,6 +17,7 @@ pub fn syscall(id: SysCall, arg0: usize, arg1: usize, arg2: usize) usize {
         .write => return sysWrite(arg0, @ptrFromInt(arg1), arg2),
         .exit => sysExit(@bitCast(@as(u32, @truncate(arg0)))),
         .yield => return sysYield(),
+        .gettime => return sysGetTime(),
         else => log.panic(@src(), "Unsupported syscall id: {d}\n", .{id}),
     }
     unreachable;
@@ -45,4 +48,9 @@ fn sysExit(exit_code: i32) void {
 fn sysYield() usize {
     task.suspendCurrentAndRunNext();
     return 0;
+}
+
+/// get time in milliseconds
+pub fn sysGetTime() usize {
+    return timer.getTimeMs();
 }

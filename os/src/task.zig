@@ -59,7 +59,7 @@ pub const TaskManager = struct {
         self.tasks[self.current_task].task_status = .Exited;
     }
 
-    /// Find next task to run and return app id.
+    /// Find next task to run and return task id.
     ///
     /// In this case, we only return the first `Ready` task in the task list.
     fn findNextTask(self: *Self) ?usize {

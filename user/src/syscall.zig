@@ -2,6 +2,7 @@ const SysCall = enum(usize) {
     write = 64,
     exit = 93,
     yield = 124,
+    gettime = 169,
 };
 
 fn call(id: SysCall, arg0: usize, arg1: usize, arg2: usize) usize {
@@ -26,4 +27,8 @@ pub fn sysExit(status: i32) noreturn {
 
 pub fn sysYield() usize {
     return call(.yield, 0, 0, 0);
+}
+
+pub fn sysGetTime() usize {
+    return call(.gettime, 0, 0, 0);
 }

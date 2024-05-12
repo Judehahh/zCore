@@ -21,15 +21,23 @@ fn call(which: eid, arg0: usize, arg1: usize, arg2: usize) usize {
     );
 }
 
+/// use sbi call to set timer
+pub fn set_timer(stime_value: usize) usize {
+    return call(.set_timer, stime_value, 0, 0);
+}
+
+/// use sbi call to putchar in console
 pub fn console_putchar(c: usize) void {
-    _ = call(eid.console_putchar, c, 0, 0);
+    _ = call(.console_putchar, c, 0, 0);
 }
 
+/// use sbi call to getchar from console
 pub fn console_getchar() usize {
-    return call(eid.console_getchar, 0, 0, 0);
+    return call(.console_getchar, 0, 0, 0);
 }
 
+/// use sbi call to shutdown the kernel
 pub fn shutdown() void {
-    _ = call(eid.shutdown, 0, 0, 0);
+    _ = call(.shutdown, 0, 0, 0);
     unreachable;
 }

@@ -4,6 +4,7 @@ const log = @import("log.zig");
 const console = @import("console.zig");
 const task = @import("task.zig");
 const syscall = @import("syscall.zig").syscall;
+const timer = @import("timer.zig");
 
 pub const Trap = union(enum) {
     Interrupt: Interrupt,
@@ -86,6 +87,12 @@ pub fn init() void {
     riscv.Stvec.write(@intFromPtr(&__alltraps), .Direct);
 }
 
+/// enable timer interrupt
+pub fn enableTimerInterrupt() void {
+    riscv.Sie.setTimer();
+}
+
+/// handle an interrupt, exception, or system call from user space
 pub export fn trap_handler(cx: *TrapContext) *TrapContext {
     const scause = riscv.Scause.read();
     const stval = riscv.Stval.read().bits.mask;
@@ -113,7 +120,13 @@ pub export fn trap_handler(cx: *TrapContext) *TrapContext {
                 );
             },
         },
-        .Interrupt => log.panic(@src(), "Interrupt is not suppoerted", .{}),
+        .Interrupt => |i| switch (i) {
+            .SupervisorTimer => {
+                timer.setNextTrigger();
+                task.suspendCurrentAndRunNext();
+            },
+            else => log.panic(@src(), "Interrupt is not suppoerted", .{}),
+        },
     }
     return cx;
 }

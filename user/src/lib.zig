@@ -15,3 +15,7 @@ pub fn exit(exit_code: i32) noreturn {
 pub fn yield_() usize {
     return syscall.sysYield();
 }
+
+pub fn getTime() usize {
+    return syscall.sysGetTime();
+}
