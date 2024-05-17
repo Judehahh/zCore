@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) !void {
 
     const os = b.addExecutable(.{
         .name = "os.elf",
-        .root_source_file = .{ .path = "src/entry.zig" },
+        .root_source_file = b.path("src/entry.zig"),
         .target = b.resolveTargetQuery(target),
         .optimize = optimize,
     });
@@ -26,7 +26,7 @@ pub fn build(b: *std.Build) !void {
     options.addOption(logLevel, "Log", log_level);
     os.root_module.addOptions("config", options);
 
-    os.setLinkerScript(.{ .path = "src/linker.ld" });
+    os.setLinkerScript(b.path("src/linker.ld"));
 
     b.installArtifact(os);
 
